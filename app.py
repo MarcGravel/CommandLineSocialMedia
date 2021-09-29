@@ -5,9 +5,66 @@ conn = None
 cursor = None
 db_pwd = None
 
-print("Please Log In:")
-user_name = input("Enter username: ")
-user_pwd = input("Enter password: ")
+while True:
+    print("Choose an option:")
+    print("1. Login")
+    print("2. Sign up")
+    auth_choice = input()
+
+    if auth_choice == "1":
+        print("Please Log In:")
+        user_name = input("Enter username: ")
+        user_pwd = input("Enter password: ")
+        break
+    elif auth_choice == "2":
+        print("Please Sign up:")
+        sign_up_name = input("Enter username: ")
+        sign_up_pwd = input("Enter password: ")
+
+        try:
+            conn = mariadb.connect(
+                            user=dbcreds.user,
+                            password=dbcreds.password,
+                            host=dbcreds.host,
+                            port=dbcreds.port,
+                            database=dbcreds.database
+                            )
+            cursor = conn.cursor()
+
+            cursor.execute("SELECT alias FROM hackers WHERE alias=?", [sign_up_name])
+            result = cursor.fetchone()
+            if result == None:
+                cursor.execute("INSERT INTO hackers(alias, password) VALUES(?,?)", [sign_up_name, sign_up_pwd])
+                conn.commit()
+                user_name = sign_up_name
+                user_pwd = sign_up_pwd
+                print("Signed up and logged in!")
+                print()
+                break
+            else: 
+                print("That username is already taken, try again.")
+                print()
+        except mariadb.DataError:
+            print("Something is wrong with your data")
+        except mariadb.OperationalError:
+            print("Something is wrong with your connection")
+        except mariadb.ProgrammingError:
+            print("Code error, check the code")
+        except mariadb.IntegrityError:
+            print("Query negatively affects the integrity of the database.")
+        except:
+            print("Something went wrong")
+        finally:
+            if (cursor != None):
+                cursor.close()
+            if (conn != None):
+                conn.rollback()
+                conn.close()    
+    else:
+        print("That wasnt an option. Try again")  
+
+conn = None
+cursor = None
 
 try:
     conn = mariadb.connect(
